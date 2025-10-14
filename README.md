@@ -1,10 +1,8 @@
-# Interactive Katacoda Scenarios
+#Interactive Katacoda Scenarios
 
-[![](http://shields.katacoda.com/katacoda/yali/count.svg)](https://www.katacoda.com/yali "Get your profile on Katacoda.com")
+[![](http://shields.katacoda.com/katacoda/ben_hall/count.svg)](https://www.katacoda.com/ben_hall "Get your profile on Katacoda.com")
 
-Visit https://www.katacoda.com/yali to view the profile and interactive scenarios
+Visit https://www.katacoda.com/ben_hall to view and take the interactive scenarios
 
-### Writing Scenarios
-Visit https://www.katacoda.com/docs to learn more about creating Katacoda scenarios
-
-For examples, visit https://github.com/katacoda/scenario-example
+###Writing Scenarios
+Visit https://www.katacoda.com/teach/git-hosted-scenarios to learn more about creating Katacoda scenarios
