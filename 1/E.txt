@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+    }
+
+    .sidebar {
+      background: #111827;
+      border-right: 1px solid #374151;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .course {
+      padding: 20px;
+      border-bottom: 1px solid #374151;
+    }
+
+    .course h1 {
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+
+    .course p {
+      color: #9ca3af;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .steps {
+      padding: 12px;
+      overflow-y: auto;
+    }
+
+    .step {
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+
+    .step:hover {
+      background: #1f2937;
+    }
+
+    .step.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: 1fr 300px;
+      min-width: 0;
+    }
+
+    .editor {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .toolbar {
+      height: 44px;
+      background: #1f2937;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+
+    .toolbar button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      resize: none;
+      border: 0;
+      outline: 0;
+      background: #0b1120;
+      color: #e5e7eb;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .terminal {
+      border-top: 1px solid #374151;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-header {
+      padding: 10px 14px;
+      background: #111827;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .terminal-output {
+      flex: 1;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 13px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .terminal-input {
+      display: flex;
+      border-top: 1px solid #1f2937;
+    }
+
+    .terminal-input span {
+      padding: 10px;
+      font-family: monospace;
+      color: #22c55e;
+    }
+
+    .terminal-input input {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: white;
+      font-family: monospace;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+
+    <div class="course">
+      <h1 id="courseTitle">Loading...</h1>
+      <p id="courseDescription"></p>
+    </div>
+
+    <div class="steps" id="steps"></div>
+
+  </aside>
+
+  <main class="workspace">
+
+    <section class="editor">
+
+      <div class="toolbar">
+        <span id="fileName">Makefile</span>
+
+        <button onclick="verify()">
+          Verify
+        </button>
+
+        <button onclick="nextStep()">
+          Next
+        </button>
+      </div>
+
+      <textarea id="editor"></textarea>
+
+    </section>
+
+    <section class="terminal">
+
+      <div class="terminal-header">
+        Terminal
+      </div>
+
+      <div class="terminal-output" id="terminalOutput">
+Welcome to the interactive terminal.
+      </div>
+
+      <div class="terminal-input">
+
+        <span>$</span>
+
+        <input
+          id="terminalInput"
+          autocomplete="off"
+          onkeydown="terminalKey(event)"
+        >
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+
+let course;
+let currentStep = 0;
+
+function init() {
+
+  google.script.run
+    .withSuccessHandler(loadCourse)
+    .getCourse();
+
+}
+
+function loadCourse(data) {
+
+  course = data;
+
+  document.getElementById('courseTitle').textContent =
+    data.title;
+
+  document.getElementById('courseDescription').textContent =
+    data.description;
+
+  renderSteps();
+
+  loadStep(0);
+
+}
+
+function renderSteps() {
+
+  const container =
+    document.getElementById('steps');
+
+  container.innerHTML = '';
+
+  course.steps.forEach((step, index) => {
+
+    const element =
+      document.createElement('div');
+
+    element.className = 'step';
+
+    element.textContent =
+      (index + 1) + '. ' + step.title;
+
+    element.onclick = () =>
+      loadStep(index);
+
+    container.appendChild(element);
+
+  });
+
+}
+
+function loadStep(index) {
+
+  currentStep = index;
+
+  document
+    .querySelectorAll('.step')
+    .forEach((element, i) => {
+
+      element.classList.toggle(
+        'active',
+        i === index
+      );
+
+    });
+
+  const step =
+    course.steps[index];
+
+  google.script.run
+    .withSuccessHandler(renderStep)
+    .getStep(step.id);
+
+}
+
+function renderStep(step) {
+
+  document.getElementById('editor').value =
+    step.initialCode || '';
+
+  document.getElementById('fileName').textContent =
+    step.file || 'workspace';
+
+}
+
+function verify() {
+
+  writeTerminal(
+    'Running verification...\n'
+  );
+
+  google.script.run
+    .withSuccessHandler(result => {
+
+      writeTerminal(
+        result.message + '\n'
+      );
+
+    })
+    .verifyStep(
+      course.steps[currentStep].id,
+      document.getElementById('editor').value
+    );
+
+}
+
+function nextStep() {
+
+  if (currentStep < course.steps.length - 1) {
+
+    loadStep(currentStep + 1);
+
+  }
+
+}
+
+function terminalKey(event) {
+
+  if (event.key !== 'Enter') {
+    return;
+  }
+
+  const input =
+    document.getElementById('terminalInput');
+
+  const command =
+    input.value.trim();
+
+  if (!command) {
+    return;
+  }
+
+  writeTerminal('$ ' + command + '\n');
+
+  input.value = '';
+
+  google.script.run
+    .withSuccessHandler(result => {
+
+      writeTerminal(result + '\n');
+
+    })
+    .executeCommand(command);
+
+}
+
+function writeTerminal(text) {
+
+  const output =
+    document.getElementById('terminalOutput');
+
+  output.textContent += text;
+
+  output.scrollTop =
+    output.scrollHeight;
+
+}
+
+init();
+
+</script>
+
+</body>
+</html>
